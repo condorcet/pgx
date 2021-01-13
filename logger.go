@@ -81,6 +81,8 @@ func logQueryArgs(args []interface{}) []interface{} {
 
 	for _, a := range args {
 		switch v := a.(type) {
+		case SensitiveData:
+			a = "[sensitive data]"
 		case []byte:
 			if len(v) < 64 {
 				a = hex.EncodeToString(v)

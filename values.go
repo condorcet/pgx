@@ -25,6 +25,10 @@ func (e SerializationError) Error() string {
 	return string(e)
 }
 
+type SensitiveData struct {
+	Value interface{}
+}
+
 func convertSimpleArgument(ci *pgtype.ConnInfo, arg interface{}) (interface{}, error) {
 	if arg == nil {
 		return nil, nil
@@ -33,6 +37,9 @@ func convertSimpleArgument(ci *pgtype.ConnInfo, arg interface{}) (interface{}, e
 	refVal := reflect.ValueOf(arg)
 	if refVal.Kind() == reflect.Ptr && refVal.IsNil() {
 		return nil, nil
+	}
+	if sens, ok := arg.(SensitiveData); ok {
+		arg = sens.Value
 	}
 
 	switch arg := arg.(type) {
