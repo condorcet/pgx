@@ -2,6 +2,8 @@ module github.com/jackc/pgx/v4
 
 go 1.12
 
+replace github.com/jackc/pgtype => github.com/condorcet/pgtype v1.6.3-0.20210131164030-19364aed564b
+
 require (
 	github.com/cockroachdb/apd v1.1.0
 	github.com/gofrs/uuid v3.2.0+incompatible
@@ -15,6 +17,7 @@ require (
 	github.com/shopspring/decimal v0.0.0-20200227202807-02e2044944cc
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.5.1
+	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
