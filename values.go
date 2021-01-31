@@ -61,7 +61,33 @@ func convertSimpleArgument(ci *pgtype.ConnInfo, arg interface{}) (interface{}, e
 			return nil, nil
 		}
 		return string(buf), nil
-
+	case *pgtype.Date:
+		buf, err := arg.EncodeText(ci, nil)
+		if err != nil {
+			return nil, err
+		}
+		if buf == nil {
+			return nil, nil
+		}
+		return string(buf), nil
+	case *pgtype.Timestamp:
+		buf, err := arg.EncodeText(ci, nil)
+		if err != nil {
+			return nil, err
+		}
+		if buf == nil {
+			return nil, nil
+		}
+		return string(buf), nil
+	case *pgtype.Timestamptz:
+		buf, err := arg.EncodeText(ci, nil)
+		if err != nil {
+			return nil, err
+		}
+		if buf == nil {
+			return nil, nil
+		}
+		return string(buf), nil
 	case driver.Valuer:
 		return callValuerValue(arg)
 	case pgtype.TextEncoder:

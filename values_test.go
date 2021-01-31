@@ -3,6 +3,7 @@ package pgx_test
 import (
 	"bytes"
 	"context"
+	"github.com/jackc/pgtype"
 	"net"
 	"os"
 	"reflect"
@@ -53,6 +54,83 @@ func TestDateTranscode(t *testing.T) {
 	})
 }
 
+func TestPgDateTranscode(t *testing.T) {
+	t.Parallel()
+
+	testWithAndWithoutPreferSimpleProtocol(t, func(t *testing.T, conn *pgx.Conn) {
+		dates := []time.Time{
+			time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(1000, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(1600, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(1700, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(1800, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(1999, 12, 31, 0, 0, 0, 0, time.UTC),
+			time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2001, 1, 2, 0, 0, 0, 0, time.UTC),
+			time.Date(2004, 2, 29, 0, 0, 0, 0, time.UTC),
+			time.Date(2013, 7, 4, 0, 0, 0, 0, time.UTC),
+			time.Date(2013, 12, 25, 0, 0, 0, 0, time.UTC),
+			time.Date(2029, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2081, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2096, 2, 29, 0, 0, 0, 0, time.UTC),
+			time.Date(2550, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC),
+			time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC),
+			time.Date(0, 0, -1, 0, 0, 0, 0, time.UTC),
+			time.Date(-100, 0, 0, 0, 0, 0, 0, time.UTC),
+		}
+
+		for _, dat := range dates {
+			actualDate := &pgtype.Date{}
+			err := actualDate.Set(dat)
+			if err != nil {
+				t.Fatalf("Failed to prepare date type: %v", err)
+			}
+			var d pgtype.Date
+
+			err = conn.QueryRow(context.Background(), "select $1::date", actualDate).Scan(&d)
+			if err != nil {
+				t.Fatalf("Unexpected failure on QueryRow Scan: %v", err)
+			}
+			if !actualDate.Time.Equal(d.Time) {
+				t.Errorf("Did not transcode date successfully: %v is not %v", d, actualDate)
+			}
+		}
+	})
+}
+
+func TestPgTimestampTranscode(t *testing.T) {
+	t.Parallel()
+
+	testWithAndWithoutPreferSimpleProtocol(t, func(t *testing.T, conn *pgx.Conn) {
+		timestamps := []time.Time{
+			time.Date(2013, 1, 2, 3, 4, 5, 6000, time.UTC),
+			time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC),
+			time.Date(0, 0, 0, 0, -1, 0, 0, time.UTC),
+			time.Date(-1, 0, 0, 0, -1, 0, 0, time.UTC),
+		}
+
+		for _, tim := range timestamps {
+			inputTime := &pgtype.Timestamp{}
+			err := inputTime.Set(tim)
+			if err != nil {
+				t.Fatalf("Failed to prepare timestamp: %v", err)
+			}
+
+			var outputTime pgtype.Timestamp
+			err = conn.QueryRow(context.Background(), "select $1::timestamp", inputTime).Scan(&outputTime)
+			if err != nil {
+				t.Fatalf("QueryRow Scan failed: %v", err)
+			}
+			if !inputTime.Time.Equal(outputTime.Time) {
+				t.Errorf("Did not transcode time successfully: %v is not %v", outputTime, inputTime)
+			}
+		}
+	})
+}
+
 func TestTimestampTzTranscode(t *testing.T) {
 	t.Parallel()
 
@@ -67,6 +145,36 @@ func TestTimestampTzTranscode(t *testing.T) {
 		}
 		if !inputTime.Equal(outputTime) {
 			t.Errorf("Did not transcode time successfully: %v is not %v", outputTime, inputTime)
+		}
+	})
+}
+
+func TestPgTimestampTzTranscode(t *testing.T) {
+	t.Parallel()
+
+	testWithAndWithoutPreferSimpleProtocol(t, func(t *testing.T, conn *pgx.Conn) {
+		timestamps := []time.Time{
+			time.Date(2013, 1, 2, 3, 4, 5, 6000, time.Local),
+			time.Date(0, 0, 0, 0, 0, 0, 0, time.Local),
+			time.Date(0, 0, 0, 0, -1, 0, 0, time.Local),
+			time.Date(-1, 0, 0, 0, -1, 0, 0, time.Local),
+		}
+
+		for _, tim := range timestamps {
+			inputTime := &pgtype.Timestamptz{}
+			err := inputTime.Set(tim)
+			if err != nil {
+				t.Fatalf("Failed to prepare timestamptz: %v", err)
+			}
+
+			var outputTime pgtype.Timestamptz
+			err = conn.QueryRow(context.Background(), "select $1::timestamptz", inputTime).Scan(&outputTime)
+			if err != nil {
+				t.Fatalf("QueryRow Scan failed: %v", err)
+			}
+			if !inputTime.Time.Equal(outputTime.Time) {
+				t.Errorf("Did not transcode time successfully: %v is not %v", outputTime, inputTime)
+			}
 		}
 	})
 }
